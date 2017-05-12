@@ -1,0 +1,12 @@
+{
+  "autoPin": true,
+  "pins": [
+    {
+      "package": "Cgd",
+      "reason": null,
+      "repositoryURL": "https://github.com/twostraws/Cgd.git",
+      "version": "0.1.0"
+    }
+  ],
+  "version": 1
+}

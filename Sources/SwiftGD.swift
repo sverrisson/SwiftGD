@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 // In case you were wondering: it's a class rather than a struct because we need
 // deinit to free the internal GD pointer, and that's only available to classes.
 public class Image {
@@ -48,6 +47,44 @@ public class Image {
 			return nil
 		}
 	}
+    
+    public func base64(quality: Int32 = 67) -> String? {
+        var size: Int32 = 0
+        if let image = gdImageJpegPtr(internalImage, &size, quality) {
+            // gdImageJpegPtr returns an UnsafeMutableRawPointer that is converted to a Data object
+            let d = Data(bytesNoCopy: image, count: Int(size), deallocator: Data.Deallocator.free)
+            return d.base64EncodedString()
+        }
+        return nil
+    }
+    
+    public init?(path: String) {
+        let imageURL = URL(fileURLWithPath: path)
+        print("Imagepath: \(imageURL)")
+        
+        guard let data = try? Data(contentsOf: imageURL) else { return nil }
+        
+        var loadedImage: gdImagePtr!
+        var mutData = data
+        let imageFile = mutData.withUnsafeMutableBytes {
+            (imageFile: UnsafeMutablePointer<FILE>) -> FILE? in
+            
+            if imageURL.lastPathComponent.hasSuffix("jpg") || imageURL.lastPathComponent.hasSuffix("jpeg") {
+                loadedImage = gdImageCreateFromJpeg(imageFile)
+            } else if imageURL.lastPathComponent.hasSuffix("png") {
+                loadedImage = gdImageCreateFromPng(imageFile)
+            } else {
+                return nil
+            }
+            return imageFile.pointee
+        }
+        
+        if let image = loadedImage {
+            internalImage = image
+        } else {
+            return nil
+        }
+    }
 
 	private init(gdImage: gdImagePtr) {
 		self.internalImage = gdImage
