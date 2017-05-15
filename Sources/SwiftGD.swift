@@ -48,6 +48,19 @@ public class Image {
 		}
 	}
     
+    public init?(path: String, callback: (String?) -> ()) {
+        let imageURL = URL(fileURLWithPath: path)
+        print("Imagepath: \(imageURL)")
+        
+        guard let data = try? Data(contentsOf: imageURL) else { return nil }
+        var mutData = data
+        self.internalImage = mutData.withUnsafeMutableBytes {
+            (data) -> UnsafeMutablePointer<gdImage> in
+            return data.pointee
+        }
+        callback(self.base64())
+    }
+    
     public func base64(quality: Int32 = 67) -> String? {
         var size: Int32 = 0
         if let image = gdImageJpegPtr(internalImage, &size, quality) {
@@ -56,34 +69,6 @@ public class Image {
             return d.base64EncodedString()
         }
         return nil
-    }
-    
-    public init?(path: String) {
-        let imageURL = URL(fileURLWithPath: path)
-        print("Imagepath: \(imageURL)")
-        
-        guard let data = try? Data(contentsOf: imageURL) else { return nil }
-        
-        var loadedImage: gdImagePtr!
-        var mutData = data
-        let imageFile = mutData.withUnsafeMutableBytes {
-            (imageFile: UnsafeMutablePointer<FILE>) -> FILE? in
-            
-            if imageURL.lastPathComponent.hasSuffix("jpg") || imageURL.lastPathComponent.hasSuffix("jpeg") {
-                loadedImage = gdImageCreateFromJpeg(imageFile)
-            } else if imageURL.lastPathComponent.hasSuffix("png") {
-                loadedImage = gdImageCreateFromPng(imageFile)
-            } else {
-                return nil
-            }
-            return imageFile.pointee
-        }
-        
-        if let image = loadedImage {
-            internalImage = image
-        } else {
-            return nil
-        }
     }
 
 	private init(gdImage: gdImagePtr) {
